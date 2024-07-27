@@ -6,7 +6,9 @@ import com.rocketseat.planner.link.LinkRequestPayload;
 import com.rocketseat.planner.link.LinkResponse;
 import com.rocketseat.planner.link.LinkService;
 import com.rocketseat.planner.participant.*;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,24 +32,24 @@ public class TripController {
     private LinkService linkService;
 
     @Autowired
+    private TripService tripService;
+
+    @Autowired
     private TripRepository repository;
 
     @PostMapping
-    public ResponseEntity<TripCreateResponse> createTrip(@RequestBody TripRequestPayload payload) {
-        Trip newTrip = new Trip(payload);
+    public ResponseEntity<TripCreateResponse> createTrip(@RequestBody @Valid TripRequestPayload payload) {
+        var trip = this.tripService.create(payload);
 
-        this.repository.save(newTrip);
+        if (payload.emails_to_invite() != null)
+            this.participantService.registerParticipantsToEvent(payload.emails_to_invite(), trip);
 
-        this.participantService.registerParticipantsToEvent(payload.emails_to_invite(), newTrip);
-
-        return ResponseEntity.ok(new TripCreateResponse(newTrip.getId()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new TripCreateResponse(trip.getId()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Trip> getTripDetails(@PathVariable UUID id) {
-        Optional<Trip> trip = this.repository.findById(id);
-
-        return trip.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(this.tripService.read(id));
     }
 
     @PutMapping("/{id}")

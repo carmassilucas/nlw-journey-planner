@@ -47,4 +47,8 @@ public class Trip {
         this.startsAt = LocalDateTime.parse(data.starts_at(), DateTimeFormatter.ISO_DATE_TIME);
         this.endsAt = LocalDateTime.parse(data.ends_at(), DateTimeFormatter.ISO_DATE_TIME);
     }
+
+    public boolean isDatesAreValid() {
+        return this.startsAt.isBefore(this.endsAt);
+    }
 }
